@@ -14,14 +14,16 @@ Web-App zur Aufnahme von Aufmaßen für Terrassenüberdachungen – läuft im Br
   - Abmessungen Breite × Höhe, Bemerkung
 - **Markise:** Aufdach / Unterdach / Senkrecht, Breite, Ausfall/Tiefe, Anschlusskabel links/rechts
 - **Fotos:** direkt mit der Kamera aufnehmen oder hochladen, mit Beschreibung
-- **PDF exportieren:** fertiger Aufmaßbericht inkl. Fotos und Unterschriftsfeldern
+- **PDF exportieren:** fertiger Aufmaßbericht inkl. Fotos; auf jeder Seite liegt eine CAD-Skizze der Überdachung als Wasserzeichen, bemaßt mit den eingegebenen Werten
+- **App-Icon „AD“** für Browser-Tab, Desktop-Verknüpfung und Smartphone-Startbildschirm
 - **Sichern / Laden:** Aufmaß als `.json`-Datei speichern und später wieder öffnen
 - Automatisches Zwischenspeichern im Browser
 
 ## Veröffentlichen mit GitHub Pages
 
 1. Neues Repository auf GitHub anlegen (z. B. `aufmass`).
-2. `index.html` und `README.md` hochladen („Add file“ → „Upload files“).
+2. Alle Dateien hochladen („Add file“ → „Upload files“):
+   `index.html`, `manifest.webmanifest`, `icon.svg`, `icon-180.png`, `icon-192.png`, `icon-512.png`, `favicon-32.png`, `README.md`
 3. Unter **Settings → Pages** bei „Source“ den Branch `main` und Ordner `/ (root)` wählen, speichern.
 4. Nach ca. 1 Minute ist die App erreichbar unter
    `https://<dein-benutzername>.github.io/aufmass/`

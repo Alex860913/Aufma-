@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1f6feb">
 <title>Aufmaßbericht</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Aufmaß">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
@@ -28,7 +35,14 @@
   label.f{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
   input[type=text],input[type=number],input[type=date],select,textarea{
     font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);
-    border-radius:8px;padding:10px;width:100%}
+    border-radius:8px;padding:10px;width:100%;min-width:0;max-width:100%}
+  input[type=text],input[type=number],input[type=date],select{height:44px;line-height:1.2}
+  input[type=date]{-webkit-appearance:none;appearance:none;display:block;text-align:left}
+  input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+  input[type=date]::-webkit-calendar-picker-indicator{margin:0;opacity:.6}
+  label.f{min-width:0}
+  header .in{display:flex;align-items:center;gap:12px}
+  header img{width:40px;height:40px;border-radius:9px;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
   input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
   textarea{min-height:80px;resize:vertical}
   .group-label{font-size:.9rem;color:var(--muted);margin:14px 0 6px}
@@ -70,8 +84,11 @@
 </head>
 <body>
 <header><div class="in">
-  <h1>Aufmaßbericht</h1>
-  <p>Terrassenüberdachung · Seitenelemente · Markise</p>
+  <img src="icon.svg" alt="">
+  <div>
+    <h1>Aufmaßbericht</h1>
+    <p>Terrassenüberdachung · Seitenelemente · Markise</p>
+  </div>
 </div></header>
 
 <main>
@@ -100,7 +117,7 @@
     <label class="f sub">Sonstiges<textarea data-f="sonstiges"></textarea></label>
   </section>
 
-  <!-- Bedachung & Licht -->
+  <!-- Bedachung -->
   <section class="card">
     <h2>Bedachung</h2>
     <div class="chips">
@@ -109,7 +126,11 @@
       <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Stegplatten klar"><span>Steg klar</span></label>
       <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Stegplatten matt"><span>Steg matt</span></label>
     </div>
-    <h2 class="sub">Licht</h2>
+  </section>
+
+  <!-- Licht -->
+  <section class="card">
+    <h2>Licht</h2>
     <div class="grid">
       <label class="f">Spots (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="spots"></label>
       <label class="f">LED-Leisten (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="leisten"></label>
@@ -182,9 +203,6 @@
       </div>
       <label class="check"><input type="checkbox" data-f="griffe">Griffe</label>
       <label class="check"><input type="checkbox" data-f="zugluft">Zugluftstopper</label>
-      <div class="grid sub" data-when="griffe=true">
-        <label class="f">Griffe (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="griffeAnzahl"></label>
-      </div>
     </div>
     <div class="grid sub" data-when="typ=Schiebetüren|Alu-Planken|Stegplatten|VSG-Glaswand">
       <label class="f">Breite (mm)<input type="number" min="0" inputmode="numeric" data-f="breite"></label>
@@ -418,6 +436,88 @@
   const safeName = s => (s || "").replace(/[^\wäöüÄÖÜß-]+/g, "_").replace(/^_+|_+$/g, "");
   const seitenName = s => s.position === "Sonstige" ? (s.positionFrei || "Weiteres Feld") : s.position;
 
+  /* ---------- Wasserzeichen: CAD-Zeichnung Terrassenüberdachung ---------- */
+  function watermark(doc, d){
+    // Modellmaße (mm) – echte Werte, falls eingegeben, sonst Standard
+    const num = (v, def) => { const n = Number(v); return n > 0 ? n : def; };
+    const B  = num(d.breite, 4000), T = num(d.tiefe, 3000);
+    const HW = num(d.hoeheWand, 2700), HR = num(d.hoeheRinne, 2300);
+    const RB = 160;                 // Rinnenhöhe
+    const ang = 30 * Math.PI / 180, k = 0.5;
+    const extX = B + k * T * Math.cos(ang), extY = Math.max(HW, HR + RB) + 350 + k * T * Math.sin(ang);
+    const s = Math.min(125 / extX, 105 / extY);
+    const ox = (210 - extX * s) / 2, oy = 245;
+    const P = (x, y, z) => [ox + s * (x + k * y * Math.cos(ang)), oy - s * (z + k * y * Math.sin(ang))];
+    const L = (a, b) => doc.line(a[0], a[1], b[0], b[1]);
+    const poly = pts => pts.forEach((p, i) => L(p, pts[(i + 1) % pts.length]));
+
+    doc.setDrawColor(205, 212, 224);
+    doc.setTextColor(190, 198, 212);
+
+    // Boden (gestrichelt)
+    doc.setLineWidth(0.2);
+    if (doc.setLineDashPattern) doc.setLineDashPattern([2, 1.5], 0);
+    poly([P(0,0,0), P(B,0,0), P(B,T,0), P(0,T,0)]);
+    if (doc.setLineDashPattern) doc.setLineDashPattern([], 0);
+
+    // Hauswand (hinten, y = T)
+    const wTop = Math.max(HW, HR + RB) + 350;
+    doc.setLineWidth(0.35);
+    poly([P(-250,T,0), P(B+250,T,0), P(B+250,T,wTop), P(-250,T,wTop)]);
+    // Wandanschluss
+    doc.setLineWidth(0.35);
+    L(P(0,T,HW), P(B,T,HW));
+
+    // Pfosten
+    const pw = 110;
+    const posts = B > 5000 ? [0, B / 2 - pw / 2, B - pw] : [0, B - pw];
+    posts.forEach(x => {
+      poly([P(x,0,0), P(x+pw,0,0), P(x+pw,0,HR), P(x,0,HR)]);
+      L(P(x+pw,0,0), P(x+pw,pw,0)); L(P(x+pw,pw,0), P(x+pw,pw,HR));
+    });
+
+    // Rinne vorne
+    poly([P(0,0,HR), P(B,0,HR), P(B,0,HR+RB), P(0,0,HR+RB)]);
+
+    // Dachfläche
+    doc.setLineWidth(0.4);
+    poly([P(0,0,HR+RB), P(B,0,HR+RB), P(B,T,HW), P(0,T,HW)]);
+    // Sparren
+    doc.setLineWidth(0.25);
+    const nF = Math.max(2, Math.round(B / 900));
+    for (let i = 1; i < nF; i++) { const x = B * i / nF; L(P(x,0,HR+RB), P(x,T,HW)); }
+
+    // Bemaßung (CAD-Stil mit Schrägstrichen)
+    doc.setLineWidth(0.15);
+    font8();
+    const tick = p => L([p[0] - 1, p[1] + 1], [p[0] + 1, p[1] - 1]);
+    const dim = (a, b, label, offX, offY) => {
+      const A = [a[0] + offX, a[1] + offY], Bp = [b[0] + offX, b[1] + offY];
+      L(a, [A[0] + Math.sign(offX) * 1.5, A[1] + Math.sign(offY) * 1.5]);
+      L(b, [Bp[0] + Math.sign(offX) * 1.5, Bp[1] + Math.sign(offY) * 1.5]);
+      L(A, Bp); tick(A); tick(Bp);
+      const mx = (A[0] + Bp[0]) / 2, my = (A[1] + Bp[1]) / 2;
+      doc.text(label, mx + (offX ? 2 * Math.sign(offX) : 0), my + (offY ? 3.2 * Math.sign(offY) : -1), { align: offX < 0 ? "right" : offX > 0 ? "left" : "center" });
+    };
+    dim(P(0,0,0), P(B,0,0), "B " + B, 0, 8);
+    dim(P(B,0,0), P(B,T,0), "T " + T, 6, 4);
+    dim(P(0,0,0), P(0,0,HR), "H Rinne " + HR, -8, 0);
+    dim(P(B+250,T,0), P(B+250,T,HW), "H Wand " + HW, 7, 0);
+
+    function font8(){ doc.setFont("helvetica","normal"); doc.setFontSize(7); }
+
+    // Schriftfeld
+    const fx = 210 - 15 - 62, fy = 297 - 15 - 18;
+    doc.setLineWidth(0.25);
+    doc.rect(fx, fy, 62, 12);
+    doc.line(fx, fy + 6, fx + 62, fy + 6);
+    doc.setFontSize(7);
+    doc.text("Terrassenüberdachung – Schema", fx + 2, fy + 4.2);
+    doc.text("Maße in mm · nicht maßstäblich", fx + 2, fy + 10.2);
+
+    doc.setDrawColor(0); doc.setTextColor(0); doc.setLineWidth(0.2);
+  }
+
   function exportPDF(){
     if (!window.jspdf) { alert("PDF-Bibliothek nicht geladen – bitte Internetverbindung prüfen und Seite neu laden."); return; }
     const d = collect();
@@ -425,7 +525,9 @@
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const M = 15, PW = 210, PH = 297, W = PW - 2*M, LW = 58;
     let y = M;
-    const ensure = h => { if (y + h > PH - M - 6) { doc.addPage(); y = M + 2; } };
+    const newPage = () => { doc.addPage(); watermark(doc, d); y = M + 2; };
+    const ensure = h => { if (y + h > PH - M - 6) newPage(); };
+    watermark(doc, d);
     const font = (size, bold) => { doc.setFontSize(size); doc.setFont("helvetica", bold ? "bold" : "normal"); };
 
     const h2 = t => {
@@ -467,8 +569,10 @@
     row("Höhe Regenrinne", mm(d.hoeheRinne));
     row("Sonstiges", d.sonstiges);
 
-    h2("Bedachung & Licht");
+    h2("Bedachung");
     row("Bedachung", d.bedachung || "–");
+
+    h2("Licht");
     if (Number(d.spots) > 0 || Number(d.leisten) > 0) {
       if (Number(d.spots) > 0) row("Spots", d.spots + " Stk.");
       if (Number(d.leisten) > 0) row("LED-Leisten", d.leisten + " Stk.");
@@ -493,7 +597,7 @@
       row("Ausführung", s.typ || "–");
       if (s.typ === "Schiebetüren") {
         row("Anzahl Flügel", s.fluegel);
-        row("Griffe", s.griffe ? ("ja" + (s.griffeAnzahl ? ", " + s.griffeAnzahl + " Stk." : "")) : "nein");
+        row("Griffe", s.griffe ? "ja" : "nein");
         row("Zugluftstopper", s.zugluft ? "ja" : "nein");
       }
       if (s.typ && s.typ !== "Offen") {
@@ -515,18 +619,9 @@
       gap();
     });
 
-    // Unterschriften
-    ensure(30); y += 14;
-    doc.setDrawColor(120);
-    doc.line(M, y, M + 75, y); doc.line(PW - M - 75, y, PW - M, y);
-    font(8.5); doc.setTextColor(95);
-    doc.text("Ort, Datum, Unterschrift Kunde", M, y + 4);
-    doc.text("Unterschrift Aufmaß", PW - M - 75, y + 4);
-    doc.setTextColor(0); y += 8;
-
     // Fotos
     if (d.fotos.length) {
-      doc.addPage(); y = M + 2;
+      newPage();
       h2("Fotos");
       const cw = (W - 6) / 2, maxH = 80;
       for (let i = 0; i < d.fotos.length; i += 2) {

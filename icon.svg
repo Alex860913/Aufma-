@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1f6feb"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Hauswand -->
+    <path d="M404 96 V424" stroke-width="22"/>
+    <!-- Dach (geneigt) mit Rinne -->
+    <path d="M70 178 L404 118" stroke-width="26"/>
+    <path d="M70 178 V202 H104" stroke-width="16"/>
+    <!-- Pfosten -->
+    <path d="M92 202 V424" stroke-width="20"/>
+    <!-- Boden -->
+    <path d="M56 424 H456" stroke-width="14"/>
+  </g>
+  <text x="248" y="372" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="bold" font-size="150" fill="#fff" letter-spacing="-4">AD</text>
+</svg>
