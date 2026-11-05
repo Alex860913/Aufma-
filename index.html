@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f6feb">
+<title>Aufmaßbericht</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f5f7;--card:#ffffff;--text:#1d2330;--muted:#667085;--line:#dfe3ea;
+    --accent:#1f6feb;--accent-weak:#e8f0fe;--danger:#c62828;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f1218;--card:#181c24;--text:#e6e9ef;--muted:#9aa3b2;--line:#2b313d;
+      --accent:#4c8dff;--accent-weak:#1c2a44;--danger:#ef5350;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  header{background:var(--accent);color:#fff;padding:16px}
+  header .in{max-width:860px;margin:0 auto}
+  header h1{margin:0;font-size:1.35rem}
+  header p{margin:2px 0 0;opacity:.85;font-size:.9rem}
+  main{max-width:860px;margin:0 auto;padding:16px 16px 120px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  .card h2{margin:0 0 12px;font-size:1.1rem}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);
+    border-radius:8px;padding:10px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  textarea{min-height:80px;resize:vertical}
+  .group-label{font-size:.9rem;color:var(--muted);margin:14px 0 6px}
+  .group-label:first-child{margin-top:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{position:relative}
+  .chip input{position:absolute;opacity:0;pointer-events:none}
+  .chip span{display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none;background:var(--card)}
+  .chip input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+  .check{display:inline-flex;align-items:center;gap:8px;margin:10px 16px 0 0;cursor:pointer}
+  .check input{width:20px;height:20px;accent-color:var(--accent)}
+  .item{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--bg)}
+  .item-head{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+  .item-head select,.item-head .title{flex:1}
+  .item-head .title{font-weight:600}
+  .sub{margin-top:12px}
+  button,.btn{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 14px;cursor:pointer;text-align:center}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  button.add{border-style:dashed;width:100%;color:var(--accent);background:transparent}
+  button.del{color:var(--danger);flex:none;padding:8px 12px}
+  .upload{display:block;text-align:center;padding:20px;border:2px dashed var(--line);border-radius:10px;cursor:pointer;color:var(--accent)}
+  .upload input{display:none}
+  .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
+  .photo{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+  .photo input{border:0!important;border-top:1px solid var(--line)!important;border-radius:0!important;font-size:.85rem!important;padding:8px!important}
+  .photo button{border:0;border-top:1px solid var(--line);border-radius:0;color:var(--danger);font-size:.85rem;padding:6px}
+  .hint{font-size:.85rem;color:var(--muted);margin:8px 0 0}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .bar .in{max-width:860px;margin:0 auto;display:flex;gap:8px}
+  .bar .primary{flex:2}
+  .bar button,.bar .btn{flex:1;padding:10px 6px}
+  .bar .btn input{display:none}
+  #status{font-size:.8rem;color:var(--danger);text-align:center;margin-top:4px}
+  #status:empty{display:none}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <h1>Aufmaßbericht</h1>
+  <p>Terrassenüberdachung · Seitenelemente · Markise</p>
+</div></header>
+
+<main>
+  <!-- Bauvorhaben -->
+  <section class="card">
+    <h2>Bauvorhaben</h2>
+    <div class="grid">
+      <label class="f">Kundenname<input type="text" data-f="kunde" autocomplete="off"></label>
+      <label class="f">Aufmaßdatum<input type="date" data-f="datum"></label>
+    </div>
+    <div class="grid sub">
+      <label class="f">Adresse<input type="text" data-f="adresse" placeholder="Straße, PLZ Ort" autocomplete="off"></label>
+      <label class="f">Aufmaß durch<input type="text" data-f="bearbeiter" autocomplete="off"></label>
+    </div>
+  </section>
+
+  <!-- Aufmaßdaten -->
+  <section class="card">
+    <h2>Aufmaßdaten</h2>
+    <div class="grid">
+      <label class="f">Breite (mm)<input type="number" min="0" inputmode="numeric" data-f="breite"></label>
+      <label class="f">Tiefe (mm)<input type="number" min="0" inputmode="numeric" data-f="tiefe"></label>
+      <label class="f">Höhe Hauswand (mm)<input type="number" min="0" inputmode="numeric" data-f="hoeheWand"></label>
+      <label class="f">Höhe Regenrinne (mm)<input type="number" min="0" inputmode="numeric" data-f="hoeheRinne"></label>
+    </div>
+    <label class="f sub">Sonstiges<textarea data-f="sonstiges"></textarea></label>
+  </section>
+
+  <!-- Bedachung & Licht -->
+  <section class="card">
+    <h2>Bedachung</h2>
+    <div class="chips">
+      <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Klarglas"><span>Klarglas</span></label>
+      <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Milchglas"><span>Milchglas</span></label>
+      <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Stegplatten klar"><span>Steg klar</span></label>
+      <label class="chip"><input type="radio" name="bedachung" data-f="bedachung" value="Stegplatten matt"><span>Steg matt</span></label>
+    </div>
+    <h2 class="sub">Licht</h2>
+    <div class="grid">
+      <label class="f">Spots (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="spots"></label>
+      <label class="f">LED-Leisten (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="leisten"></label>
+    </div>
+  </section>
+
+  <!-- Keilfenster -->
+  <section class="card">
+    <h2>Keilfenster</h2>
+    <div id="keilfenster"></div>
+    <button type="button" class="add" data-add="keilfenster">+ Keilfenster hinzufügen</button>
+  </section>
+
+  <!-- Seiten -->
+  <section class="card">
+    <h2>Seiten</h2>
+    <div id="seiten"></div>
+    <button type="button" class="add" data-add="seiten">+ Seite hinzufügen</button>
+  </section>
+
+  <!-- Markise -->
+  <section class="card">
+    <h2>Markise</h2>
+    <div id="markisen"></div>
+    <button type="button" class="add" data-add="markisen">+ Markise hinzufügen</button>
+  </section>
+
+  <!-- Fotos -->
+  <section class="card">
+    <h2>Fotos <span id="fotoCount" class="hint"></span></h2>
+    <label class="upload">📷 Fotos aufnehmen oder hochladen
+      <input type="file" id="fotoInput" accept="image/*" multiple>
+    </label>
+    <div class="photos" id="fotos"></div>
+  </section>
+
+  <p class="hint">Eingaben werden automatisch im Browser zwischengespeichert. Mit „Sichern“ lädst du eine Datei herunter, die du später über „Laden“ wieder öffnen kannst.</p>
+</main>
+
+<div class="bar"><div class="in">
+  <button type="button" class="primary" id="btnPdf">PDF exportieren</button>
+  <button type="button" id="btnSichern">Sichern</button>
+  <label class="btn">Laden<input type="file" id="fileLaden" accept="application/json,.json"></label>
+  <button type="button" id="btnNeu">Neu</button>
+</div><div id="status"></div></div>
+
+<!-- Vorlage: Seite -->
+<template id="tpl-seite">
+  <div class="item">
+    <div class="item-head">
+      <select data-f="position" aria-label="Seite">
+        <option>Links</option><option>Rechts</option>
+        <option>Vorne 1</option><option>Vorne 2</option><option>Vorne 3</option><option>Vorne 4</option>
+        <option>Hinten</option><option value="Sonstige">Weiteres Feld …</option>
+      </select>
+      <button type="button" class="del">Entfernen</button>
+    </div>
+    <label class="f sub" data-when="position=Sonstige">Bezeichnung<input type="text" data-f="positionFrei" placeholder="z. B. Vorne 5, Ecke links"></label>
+    <div class="group-label">Ausführung</div>
+    <div class="chips">
+      <label class="chip"><input type="radio" data-f="typ" value="Schiebetüren"><span>Schiebetüren</span></label>
+      <label class="chip"><input type="radio" data-f="typ" value="Alu-Planken"><span>Alu-Planken</span></label>
+      <label class="chip"><input type="radio" data-f="typ" value="Stegplatten"><span>Stegplatten</span></label>
+      <label class="chip"><input type="radio" data-f="typ" value="VSG-Glaswand"><span>VSG-Glaswand</span></label>
+      <label class="chip"><input type="radio" data-f="typ" value="Offen"><span>Offen</span></label>
+    </div>
+    <div class="sub" data-when="typ=Schiebetüren">
+      <div class="grid">
+        <label class="f">Anzahl Flügel<input type="number" min="0" inputmode="numeric" data-f="fluegel"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-f="griffe">Griffe</label>
+      <label class="check"><input type="checkbox" data-f="zugluft">Zugluftstopper</label>
+      <div class="grid sub" data-when="griffe=true">
+        <label class="f">Griffe (Anzahl)<input type="number" min="0" inputmode="numeric" data-f="griffeAnzahl"></label>
+      </div>
+    </div>
+    <div class="grid sub" data-when="typ=Schiebetüren|Alu-Planken|Stegplatten|VSG-Glaswand">
+      <label class="f">Breite (mm)<input type="number" min="0" inputmode="numeric" data-f="breite"></label>
+      <label class="f">Höhe (mm)<input type="number" min="0" inputmode="numeric" data-f="hoehe"></label>
+    </div>
+    <label class="f sub">Bemerkung<input type="text" data-f="bemerkung"></label>
+  </div>
+</template>
+
+<!-- Vorlage: Keilfenster -->
+<template id="tpl-keil">
+  <div class="item">
+    <div class="item-head">
+      <div class="chips title">
+        <label class="chip"><input type="radio" data-f="seite" value="Links"><span>Links</span></label>
+        <label class="chip"><input type="radio" data-f="seite" value="Rechts"><span>Rechts</span></label>
+      </div>
+      <button type="button" class="del">Entfernen</button>
+    </div>
+    <div class="group-label">Material</div>
+    <div class="chips">
+      <label class="chip"><input type="radio" data-f="material" value="Glas"><span>Glas</span></label>
+      <label class="chip"><input type="radio" data-f="material" value="Steg"><span>Steg</span></label>
+    </div>
+    <div class="group-label">Ausführung</div>
+    <div class="chips">
+      <label class="chip"><input type="radio" data-f="ausfuehrung" value="klar"><span>Klar</span></label>
+      <label class="chip"><input type="radio" data-f="ausfuehrung" value="matt"><span>Matt</span></label>
+    </div>
+    <div class="group-label">Abmessungen</div>
+    <div class="grid">
+      <label class="f">Tiefe (mm)<input type="number" min="0" inputmode="numeric" data-f="tiefe"></label>
+      <label class="f">Höhe hinten / Wand (mm)<input type="number" min="0" inputmode="numeric" data-f="hoeheHinten"></label>
+      <label class="f">Höhe vorne / Rinne (mm)<input type="number" min="0" inputmode="numeric" data-f="hoeheVorne"></label>
+    </div>
+    <label class="f sub">Bemerkung<input type="text" data-f="bemerkung"></label>
+  </div>
+</template>
+
+<!-- Vorlage: Markise -->
+<template id="tpl-markise">
+  <div class="item">
+    <div class="item-head">
+      <div class="chips title">
+        <label class="chip"><input type="radio" data-f="typ" value="Aufdach"><span>Aufdach</span></label>
+        <label class="chip"><input type="radio" data-f="typ" value="Unterdach"><span>Unterdach</span></label>
+        <label class="chip"><input type="radio" data-f="typ" value="Senkrecht"><span>Senkrecht</span></label>
+      </div>
+      <button type="button" class="del">Entfernen</button>
+    </div>
+    <div class="grid sub">
+      <label class="f">Breite (mm)<input type="number" min="0" inputmode="numeric" data-f="breite"></label>
+      <label class="f">Ausfall / Tiefe (mm)<input type="number" min="0" inputmode="numeric" data-f="ausfall"></label>
+    </div>
+    <div class="group-label">Anschlusskabel</div>
+    <div class="chips">
+      <label class="chip"><input type="radio" data-f="kabel" value="Links"><span>Links</span></label>
+      <label class="chip"><input type="radio" data-f="kabel" value="Rechts"><span>Rechts</span></label>
+    </div>
+    <label class="f sub">Bemerkung<input type="text" data-f="bemerkung"></label>
+  </div>
+</template>
+
+<script>
+(function(){
+  "use strict";
+  const STORE = "aufmass-v1";
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const LISTS = {
+    keilfenster: { tpl: "tpl-keil",    box: "#keilfenster" },
+    seiten:      { tpl: "tpl-seite",   box: "#seiten" },
+    markisen:    { tpl: "tpl-markise", box: "#markisen" }
+  };
+  const SEITEN_ORDER = ["Links","Rechts","Vorne 1","Vorne 2","Vorne 3","Vorne 4","Hinten"];
+  let uid = 0;
+  let fotos = [];
+
+  /* ---------- Felder lesen / schreiben ---------- */
+  function readFields(root, onlyStatic){
+    const o = {};
+    $$("[data-f]", root).forEach(el => {
+      if (onlyStatic && el.closest(".item")) return;
+      const k = el.dataset.f;
+      if (el.type === "radio") { if (el.checked) o[k] = el.value; else if (!(k in o)) o[k] = ""; }
+      else if (el.type === "checkbox") o[k] = el.checked;
+      else o[k] = el.value.trim();
+    });
+    return o;
+  }
+  function writeFields(root, obj, onlyStatic){
+    $$("[data-f]", root).forEach(el => {
+      if (onlyStatic && el.closest(".item")) return;
+      const v = obj[el.dataset.f];
+      if (v === undefined) return;
+      if (el.type === "radio") el.checked = (el.value === v);
+      else if (el.type === "checkbox") el.checked = !!v;
+      else el.value = v;
+    });
+  }
+  function clearStatic(){
+    $$("[data-f]").forEach(el => {
+      if (el.closest(".item")) return;
+      if (el.type === "radio" || el.type === "checkbox") el.checked = false; else el.value = "";
+    });
+  }
+
+  /* ---------- Listen (Seiten, Keilfenster, Markisen) ---------- */
+  function addItem(list, data){
+    const node = $("#" + LISTS[list].tpl).content.firstElementChild.cloneNode(true);
+    const n = ++uid;
+    $$("input[type=radio]", node).forEach(r => r.name = r.dataset.f + "_" + n);
+    if (data) writeFields(node, data);
+    $(LISTS[list].box).appendChild(node);
+    updateWhen(node);
+    return node;
+  }
+  function updateWhen(item){
+    const d = readFields(item);
+    $$("[data-when]", item).forEach(el => {
+      const [k, v] = el.dataset.when.split("=");
+      el.hidden = !v.split("|").includes(String(d[k]));
+    });
+  }
+  function defaultsFor(list){
+    const items = $$(LISTS[list].box + " > .item").map(it => readFields(it));
+    if (list === "seiten") {
+      const used = items.map(i => i.position);
+      return { position: SEITEN_ORDER.find(p => !used.includes(p)) || "Sonstige" };
+    }
+    if (list === "keilfenster") {
+      const used = items.map(i => i.seite);
+      return { seite: ["Links","Rechts"].find(p => !used.includes(p)) || "" };
+    }
+    return {};
+  }
+
+  /* ---------- Gesamtzustand ---------- */
+  function collect(){
+    const d = readFields(document, true);
+    for (const l in LISTS) d[l] = $$(LISTS[l].box + " > .item").map(it => readFields(it));
+    d.fotos = fotos;
+    return d;
+  }
+  function restore(d){
+    clearStatic();
+    writeFields(document, d, true);
+    for (const l in LISTS) {
+      $(LISTS[l].box).innerHTML = "";
+      (d[l] || []).forEach(x => addItem(l, x));
+    }
+    fotos = Array.isArray(d.fotos) ? d.fotos : [];
+    renderFotos();
+  }
+  function today(){
+    const t = new Date();
+    return t.getFullYear() + "-" + String(t.getMonth()+1).padStart(2,"0") + "-" + String(t.getDate()).padStart(2,"0");
+  }
+  function fresh(){
+    restore({ datum: today(), seiten: [{position:"Links"},{position:"Rechts"},{position:"Vorne 1"}], keilfenster: [], markisen: [], fotos: [] });
+  }
+
+  /* ---------- Zwischenspeicher ---------- */
+  let saveTimer;
+  function status(msg){ $("#status").textContent = msg || ""; }
+  function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); }
+  function save(){
+    const d = collect();
+    try { localStorage.setItem(STORE, JSON.stringify(d)); status(""); }
+    catch (e) {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(Object.assign({}, d, { fotos: [] })));
+        status("Fotos sind zu groß für den Zwischenspeicher – bitte vor dem Schließen PDF exportieren oder sichern.");
+      } catch (_) { status("Zwischenspeichern nicht möglich – bitte PDF exportieren oder sichern."); }
+    }
+  }
+
+  /* ---------- Fotos ---------- */
+  function loadImage(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = reject;
+      r.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const max = 1400;
+          const s = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.round(img.width * s), h = Math.round(img.height * s);
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve({ src: c.toDataURL("image/jpeg", 0.8), w, h, caption: "" });
+        };
+        img.src = r.result;
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  function renderFotos(){
+    const box = $("#fotos");
+    box.innerHTML = "";
+    fotos.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.className = "photo";
+      div.innerHTML = '<img alt=""><input type="text" placeholder="Beschreibung"><button type="button">Entfernen</button>';
+      $("img", div).src = p.src;
+      const inp = $("input", div);
+      inp.value = p.caption || "";
+      inp.addEventListener("input", () => { p.caption = inp.value; scheduleSave(); });
+      $("button", div).addEventListener("click", () => { fotos.splice(i, 1); renderFotos(); scheduleSave(); });
+      box.appendChild(div);
+    });
+    $("#fotoCount").textContent = fotos.length ? "(" + fotos.length + ")" : "";
+  }
+  $("#fotoInput").addEventListener("change", async e => {
+    for (const f of e.target.files) {
+      try { fotos.push(await loadImage(f)); }
+      catch (err) { alert("Bild konnte nicht gelesen werden: " + f.name); }
+    }
+    e.target.value = "";
+    renderFotos();
+    scheduleSave();
+  });
+
+  /* ---------- Hilfsfunktionen PDF ---------- */
+  const fmtDate = iso => { if (!iso) return ""; const [y,m,d] = iso.split("-"); return d + "." + m + "." + y; };
+  const mm = v => v ? v + " mm" : "";
+  const safeName = s => (s || "").replace(/[^\wäöüÄÖÜß-]+/g, "_").replace(/^_+|_+$/g, "");
+  const seitenName = s => s.position === "Sonstige" ? (s.positionFrei || "Weiteres Feld") : s.position;
+
+  function exportPDF(){
+    if (!window.jspdf) { alert("PDF-Bibliothek nicht geladen – bitte Internetverbindung prüfen und Seite neu laden."); return; }
+    const d = collect();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const M = 15, PW = 210, PH = 297, W = PW - 2*M, LW = 58;
+    let y = M;
+    const ensure = h => { if (y + h > PH - M - 6) { doc.addPage(); y = M + 2; } };
+    const font = (size, bold) => { doc.setFontSize(size); doc.setFont("helvetica", bold ? "bold" : "normal"); };
+
+    const h2 = t => {
+      ensure(18); y += 3;
+      doc.setFillColor(232, 240, 254); doc.rect(M, y - 5, W, 7.5, "F");
+      font(11.5, true); doc.setTextColor(20, 45, 100); doc.text(t, M + 2, y);
+      doc.setTextColor(0); y += 8;
+    };
+    const h3 = t => { ensure(12); font(10.5, true); doc.text(t, M + 2, y); y += 5.5; };
+    const row = (label, val) => {
+      if (val === "" || val == null || val === false) return;
+      font(10);
+      const lines = doc.splitTextToSize(String(val), W - LW);
+      ensure(lines.length * 4.8 + 1.5);
+      doc.setTextColor(95); doc.text(label, M + 4, y);
+      doc.setTextColor(0); doc.text(lines, M + LW, y);
+      y += lines.length * 4.8 + 1.5;
+    };
+    const none = t => { ensure(6); font(10); doc.setTextColor(130); doc.text(t, M + 4, y); doc.setTextColor(0); y += 6; };
+    const gap = () => { y += 2; };
+
+    // Kopf
+    font(18, true); doc.text("Aufmaßbericht", M, y + 5);
+    font(10); doc.text("Datum: " + fmtDate(d.datum), PW - M, y + 5, { align: "right" });
+    y += 9;
+    doc.setDrawColor(31, 111, 235); doc.setLineWidth(0.6); doc.line(M, y, PW - M, y);
+    doc.setDrawColor(0); doc.setLineWidth(0.2); y += 4;
+
+    h2("Bauvorhaben");
+    row("Kundenname", d.kunde);
+    row("Adresse", d.adresse);
+    row("Aufmaßdatum", fmtDate(d.datum));
+    row("Aufmaß durch", d.bearbeiter);
+
+    h2("Aufmaßdaten");
+    row("Breite", mm(d.breite));
+    row("Tiefe", mm(d.tiefe));
+    row("Höhe Hauswand", mm(d.hoeheWand));
+    row("Höhe Regenrinne", mm(d.hoeheRinne));
+    row("Sonstiges", d.sonstiges);
+
+    h2("Bedachung & Licht");
+    row("Bedachung", d.bedachung || "–");
+    if (Number(d.spots) > 0 || Number(d.leisten) > 0) {
+      if (Number(d.spots) > 0) row("Spots", d.spots + " Stk.");
+      if (Number(d.leisten) > 0) row("LED-Leisten", d.leisten + " Stk.");
+    } else row("Licht", "kein Licht");
+
+    h2("Keilfenster");
+    if (!d.keilfenster.length) none("keine Keilfenster");
+    d.keilfenster.forEach((k, i) => {
+      h3("Keilfenster " + (i + 1) + (k.seite ? " – " + k.seite : ""));
+      row("Material / Ausführung", [k.material, k.ausfuehrung].filter(Boolean).join(" ") || "–");
+      row("Tiefe", mm(k.tiefe));
+      row("Höhe hinten (Wand)", mm(k.hoeheHinten));
+      row("Höhe vorne (Rinne)", mm(k.hoeheVorne));
+      row("Bemerkung", k.bemerkung);
+      gap();
+    });
+
+    h2("Seiten");
+    if (!d.seiten.length) none("keine Seitenelemente");
+    d.seiten.forEach(s => {
+      h3(seitenName(s));
+      row("Ausführung", s.typ || "–");
+      if (s.typ === "Schiebetüren") {
+        row("Anzahl Flügel", s.fluegel);
+        row("Griffe", s.griffe ? ("ja" + (s.griffeAnzahl ? ", " + s.griffeAnzahl + " Stk." : "")) : "nein");
+        row("Zugluftstopper", s.zugluft ? "ja" : "nein");
+      }
+      if (s.typ && s.typ !== "Offen") {
+        row("Breite", mm(s.breite));
+        row("Höhe", mm(s.hoehe));
+      }
+      row("Bemerkung", s.bemerkung);
+      gap();
+    });
+
+    h2("Markise");
+    if (!d.markisen.length) none("keine Markise");
+    d.markisen.forEach((m, i) => {
+      h3("Markise " + (i + 1) + (m.typ ? " – " + m.typ : ""));
+      row("Breite", mm(m.breite));
+      row("Ausfall / Tiefe", mm(m.ausfall));
+      row("Anschlusskabel", m.kabel || "–");
+      row("Bemerkung", m.bemerkung);
+      gap();
+    });
+
+    // Unterschriften
+    ensure(30); y += 14;
+    doc.setDrawColor(120);
+    doc.line(M, y, M + 75, y); doc.line(PW - M - 75, y, PW - M, y);
+    font(8.5); doc.setTextColor(95);
+    doc.text("Ort, Datum, Unterschrift Kunde", M, y + 4);
+    doc.text("Unterschrift Aufmaß", PW - M - 75, y + 4);
+    doc.setTextColor(0); y += 8;
+
+    // Fotos
+    if (d.fotos.length) {
+      doc.addPage(); y = M + 2;
+      h2("Fotos");
+      const cw = (W - 6) / 2, maxH = 80;
+      for (let i = 0; i < d.fotos.length; i += 2) {
+        font(9);
+        const pair = d.fotos.slice(i, i + 2).map((p, j) => {
+          let w = cw, h = cw * p.h / p.w;
+          if (h > maxH) { h = maxH; w = h * p.w / p.h; }
+          const cap = doc.splitTextToSize("Foto " + (i + j + 1) + (p.caption ? ": " + p.caption : ""), cw);
+          return { p, w, h, cap };
+        });
+        const need = Math.max.apply(null, pair.map(o => o.h + o.cap.length * 4 + 4)) + 4;
+        ensure(need);
+        pair.forEach((o, j) => {
+          const x = M + j * (cw + 6);
+          doc.addImage(o.p.src, "JPEG", x, y, o.w, o.h);
+          font(9); doc.setTextColor(80); doc.text(o.cap, x, y + o.h + 4.5); doc.setTextColor(0);
+        });
+        y += need;
+      }
+    }
+
+    // Fußzeile
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++) {
+      doc.setPage(i);
+      font(8); doc.setTextColor(130);
+      doc.text("Aufmaß " + (d.kunde || "") + (d.datum ? " – " + fmtDate(d.datum) : ""), M, PH - 8);
+      doc.text("Seite " + i + " von " + n, PW - M, PH - 8, { align: "right" });
+      doc.setTextColor(0);
+    }
+    doc.save("Aufmass_" + (safeName(d.kunde) || "Kunde") + "_" + (d.datum || today()) + ".pdf");
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener("input", e => {
+    const it = e.target.closest(".item"); if (it) updateWhen(it);
+    scheduleSave();
+  });
+  document.addEventListener("change", e => {
+    const it = e.target.closest(".item"); if (it) updateWhen(it);
+    scheduleSave();
+  });
+  document.addEventListener("click", e => {
+    const del = e.target.closest(".del");
+    if (del) { del.closest(".item").remove(); scheduleSave(); return; }
+    const add = e.target.closest("[data-add]");
+    if (add) { const l = add.dataset.add; addItem(l, defaultsFor(l)); scheduleSave(); }
+  });
+
+  $("#btnPdf").addEventListener("click", exportPDF);
+  $("#btnSichern").addEventListener("click", () => {
+    const d = collect();
+    const blob = new Blob([JSON.stringify(d)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Aufmass_" + (safeName(d.kunde) || "Kunde") + "_" + (d.datum || today()) + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+  $("#fileLaden").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { restore(JSON.parse(await f.text())); save(); }
+    catch (err) { alert("Datei konnte nicht gelesen werden."); }
+    e.target.value = "";
+  });
+  $("#btnNeu").addEventListener("click", () => {
+    if (confirm("Aktuelles Aufmaß verwerfen und ein neues beginnen?")) { fresh(); save(); }
+  });
+
+  /* ---------- Start ---------- */
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE)); } catch (e) {}
+  if (saved) restore(saved); else fresh();
+})();
+</script>
+</body>
+</html>
